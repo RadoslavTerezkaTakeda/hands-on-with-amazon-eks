@@ -66,23 +66,23 @@ instance_ids=$(aws ec2 describe-instances --filters "Name=tag:alpha.eksctl.io/no
 echo "Terminating instances: $instance_ids"
 AWS_PAGER="" aws ec2 terminate-instances --instance-ids $instance_ids
 
-# aws ec2 wait instance-terminated --instance-ids $instance_ids
-# echo "Old instances terminated."
+aws ec2 wait instance-terminated --instance-ids $instance_ids
+echo "Old instances terminated."
 
-# get_running_instance_count() {
-#     aws ec2 describe-instances --filters "Name=tag:alpha.eksctl.io/nodegroup-name,Values=eks-node-group" "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].InstanceId" --output text | wc -w
-# }
+get_running_instance_count() {
+    aws ec2 describe-instance-status --filters "Name=instance-status.status,Values=ok" --query "InstanceStatuses[*].InstanceId" --output text | wc -w
+}
 
-# echo "Waiting for new instances to be in 'running' state..."
-# while true; do
-#     running_count=$(get_running_instance_count)
-#     if [ "$running_count" -ge 3 ]; then
-#         echo "At least 3 new instances are running."
-#         break
-#     else
-#         echo "Currently running instances: $running_count. Waiting..."
-#         sleep 15
-#     fi
-# done
+echo "Waiting for new instances to be in 'running' state..."
+while true; do
+    running_count=$(get_running_instance_count)
+    if [ "$running_count" -ge 3 ]; then
+        echo "At least 3 new instances are running."
+        break
+    else
+        echo "Currently running instances: $running_count. Waiting..."
+        sleep 15
+    fi
+done
 
-# echo "New worker nodes are up and running."
+echo "New worker nodes are up and running."
