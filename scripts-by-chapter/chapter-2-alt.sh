@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-git clone https://github.com/pluralsight-cloud/hands-on-with-amazon-eks.git
 cd hands-on-with-amazon-eks
 ./scripts-by-chapter/prepare-cloud-shell.sh
 ./scripts-by-chapter/chapter-1.sh
