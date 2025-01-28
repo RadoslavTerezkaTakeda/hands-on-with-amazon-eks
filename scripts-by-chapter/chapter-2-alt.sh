@@ -64,7 +64,7 @@ echo "Add-on VPC CNI is active."
 instance_ids=$(aws ec2 describe-instances --filters "Name=tag:alpha.eksctl.io/nodegroup-name,Values=eks-node-group" --query "Reservations[*].Instances[*].InstanceId" --output text)
 
 echo "Terminating instances: $instance_ids"
-aws ec2 terminate-instances --instance-ids $instance_ids
+AWS_PAGER="" aws ec2 terminate-instances --instance-ids $instance_ids
 
 # aws ec2 wait instance-terminated --instance-ids $instance_ids
 # echo "Old instances terminated."
