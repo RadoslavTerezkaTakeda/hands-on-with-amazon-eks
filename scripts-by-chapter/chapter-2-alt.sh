@@ -21,3 +21,71 @@ aws iam attach-role-policy --role-name ${nodegroup_iam_role} --policy-arn arn:aw
 aws iam attach-role-policy --role-name ${nodegroup_iam_role} --policy-arn arn:aws:iam::aws:policy/AmazonRoute53FullAccess
 ( cd ./Infrastructure/k8s-tooling/external-dns && ./create.sh )
 
+( cd ./clients-api/infra/cloudformation && ./create-dynamodb-table.sh development ) & \
+( cd ./inventory-api/infra/cloudformation && ./create-dynamodb-table.sh development ) & \
+( cd ./renting-api/infra/cloudformation && ./create-dynamodb-table.sh development ) & \
+( cd ./resource-api/infra/cloudformation && ./create-dynamodb-table.sh development ) &
+wait
+
+aws iam attach-role-policy --role-name ${nodegroup_iam_role} --policy-arn arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+
+( cd ./resource-api/infra/helm && ./create.sh ) & \
+( cd ./clients-api/infra/helm && ./create.sh ) & \
+( cd ./inventory-api/infra/helm && ./create.sh ) & \
+( cd ./renting-api/infra/helm && ./create.sh ) & \
+( cd ./front-end/infra/helm && ./create.sh ) &
+wait
+
+aws eks create-addon --addon-name vpc-cni --cluster-name eks-acg
+
+# Wait for VPC CNI add-on to be in ACTIVE state.
+addon_name="vpc-cni"
+cluster_name="eks-acg"
+
+check_addon_status() {
+  aws eks describe-addon --cluster-name "$cluster_name" --addon-name "$addon_name" --query "addon.status" --output text
+}
+
+echo "Waiting for add-on '$addon_name' to be in 'ACTIVE' state..."
+
+while true; do
+  status=$(check_addon_status)
+  if [ "$status" == "ACTIVE" ]; then
+    echo "Add-on '$addon_name' is now ACTIVE."
+    break
+  else
+    echo "Current status: $status. Waiting..."
+    sleep 15
+  fi
+done
+
+echo "Add-on VPC CNI is active."
+
+( cd ./Infrastructure/k8s-tooling/cni && ./setup.sh )
+
+# Delete former ec2 instances and wait for the new.
+instance_ids=$(aws ec2 describe-instances --filters "Name=tag:alpha.eksctl.io/nodegroup-name,Values=eks-node-group" --query "Reservations[*].Instances[*].InstanceId" --output text)
+
+echo "Terminating instances: $instance_ids"
+aws ec2 terminate-instances --instance-ids $instance_ids
+
+aws ec2 wait instance-terminated --instance-ids $instance_ids
+echo "Old instances terminated."
+
+get_running_instance_count() {
+    aws ec2 describe-instances --filters "Name=tag:alpha.eksctl.io/nodegroup-name,Values=eks-node-group" "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].InstanceId" --output text | wc -w
+}
+
+echo "Waiting for new instances to be in 'running' state..."
+while true; do
+    running_count=$(get_running_instance_count)
+    if [ "$running_count" -ge 3 ]; then
+        echo "At least 3 new instances are running."
+        break
+    else
+        echo "Currently running instances: $running_count. Waiting..."
+        sleep 15
+    fi
+done
+
+echo "New worker nodes are up and running."
