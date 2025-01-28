@@ -32,7 +32,7 @@ aws iam attach-role-policy --role-name ${nodegroup_iam_role} --policy-arn arn:aw
 ( cd ./renting-api/infra/helm && ./create.sh ) & \
 ( cd ./front-end/infra/helm && ./create.sh ) &
 wait
-
+exit
 aws eks create-addon --addon-name vpc-cni --cluster-name eks-acg
 
 # Wait for VPC CNI add-on to be in ACTIVE state.
