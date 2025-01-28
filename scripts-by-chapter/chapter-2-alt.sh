@@ -15,8 +15,6 @@ aws iam attach-role-policy --role-name ${nodegroup_iam_role} --policy-arn arn:aw
 
 ( cd ./Infrastructure/cloudformation/ssl-certificate && ./create.sh )
 
-( cd ./Infrastructure/k8s-tooling/load-balancer-controller/test && ./run-with-ssl.sh )
-
 aws iam attach-role-policy --role-name ${nodegroup_iam_role} --policy-arn arn:aws:iam::aws:policy/AmazonRoute53FullAccess
 ( cd ./Infrastructure/k8s-tooling/external-dns && ./create.sh )
 
