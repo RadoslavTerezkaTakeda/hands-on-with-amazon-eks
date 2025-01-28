@@ -32,7 +32,24 @@ aws iam attach-role-policy --role-name ${nodegroup_iam_role} --policy-arn arn:aw
 ( cd ./renting-api/infra/helm && ./create.sh ) & \
 ( cd ./front-end/infra/helm && ./create.sh ) &
 wait
-exit
+
+# Wait for load balancer to be ready.
+while true; do
+  # Získajte zoznam load balancerov a ich stavov
+  LOAD_BALANCERS=$(aws elbv2 describe-load-balancers --region us-east-1 --query "LoadBalancers[*].{Name:LoadBalancerName, State:State.Code}" --output text)
+
+  # Prechádzajte cez každý load balancer a kontrolujte stav
+  while read -r NAME STATE; do
+    if [ "$STATE" == "active" ]; then
+      echo "Load balancer $NAME is ready with state: $STATE"
+      exit 0
+    fi
+  done <<< "$LOAD_BALANCERS"
+
+  echo "No load balancers are ready yet. Checking again in 5 seconds."
+  sleep 5
+done
+
 aws eks create-addon --addon-name vpc-cni --cluster-name eks-acg
 
 # Wait for VPC CNI add-on to be in ACTIVE state.
