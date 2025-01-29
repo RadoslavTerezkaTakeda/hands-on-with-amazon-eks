@@ -36,21 +36,24 @@ aws iam attach-role-policy --role-name ${nodegroup_iam_role} --policy-arn arn:aw
 wait
 
 # Wait for load balancer to be ready.
-while true; do
-  # Získajte zoznam load balancerov a ich stavov
-  LOAD_BALANCERS=$(aws elbv2 describe-load-balancers --region us-east-1 --query "LoadBalancers[*].{Name:LoadBalancerName, State:State.Code}" --output text)
+check_load_balancers() {
+  while true; do
+    # Get the list of load balancers.
+    LOAD_BALANCERS=$(aws elbv2 describe-load-balancers --region us-east-1 --query "LoadBalancers[*].{Name:LoadBalancerName, State:State.Code}" --output text)
 
-  # Prechádzajte cez každý load balancer a kontrolujte stav
-  while read -r NAME STATE; do
-    if [ "$STATE" == "active" ]; then
-      echo "Load balancer $NAME is ready with state: $STATE"
-      exit 0
-    fi
-  done <<< "$LOAD_BALANCERS"
+    # Loop through the list of load balancers and check if any are active.
+    while read -r NAME STATE; do
+      if [ "$STATE" == "active" ]; then
+        echo "Load balancer $NAME is ready with state: $STATE"
+        return 0
+      fi
+    done <<< "$LOAD_BALANCERS"
 
-  echo "No load balancers are ready yet. Checking again in 30 seconds."
-  sleep 30
-done
+    echo "No load balancers are ready yet. Checking again in 30 seconds."
+    sleep 30
+  done
+}
+check_load_balancers
 
 aws eks create-addon --addon-name vpc-cni --cluster-name eks-acg
 
