@@ -46,8 +46,8 @@ while true; do
     fi
   done <<< "$LOAD_BALANCERS"
 
-  echo "No load balancers are ready yet. Checking again in 5 seconds."
-  sleep 5
+  echo "No load balancers are ready yet. Checking again in 30 seconds."
+  sleep 30
 done
 
 aws eks create-addon --addon-name vpc-cni --cluster-name eks-acg
