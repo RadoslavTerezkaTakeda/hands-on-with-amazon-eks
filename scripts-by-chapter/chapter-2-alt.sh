@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 cd hands-on-with-amazon-eks
 ./scripts-by-chapter/prepare-cloud-shell.sh
 ./scripts-by-chapter/chapter-1.sh
