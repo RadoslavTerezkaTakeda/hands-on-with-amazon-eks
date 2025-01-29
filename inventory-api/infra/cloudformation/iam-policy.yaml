@@ -23,7 +23,7 @@ Resources:
             - dynamodb:UpdateItem
           Resource:
             - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Namespace}-inventory
-            - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::AccountId}/index/*
+            - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Namespace}-inventory/index/*
       ManagedPolicyName: !Sub "${Namespace}-InventoryApiPolicy"
 Outputs:
   IamPolicyArn:
