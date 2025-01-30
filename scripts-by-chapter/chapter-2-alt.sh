@@ -53,6 +53,7 @@ check_load_balancers() {
   done
 }
 check_load_balancers
+exit
 
 aws eks create-addon --addon-name vpc-cni --cluster-name eks-acg
 
